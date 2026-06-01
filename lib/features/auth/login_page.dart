@@ -1,3 +1,5 @@
+import 'package:campus_board/features/auth/register_page.dart';
+import 'package:campus_board/features/feed/feed_page.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -8,23 +10,58 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+
+  //lista de usuarios
+  final Map<String, Map<String, String>> _usuariosGrupo = {
+    'francisco@unipe.edu.br': {
+      'nome': 'Francisco Paulino',
+      'iniciais': 'F',
+      'email': 'francisco@unipe.edu.br'
+    },
+    'arthur@unipe.edu.br': {
+      'nome': 'Arthur Murilo',
+      'iniciais': 'A',
+      'email': 'arthur@unipe.edu.br'
+    },
+    'matheus@unipe.edu.br': {
+      'nome': 'Matheus Barbosa',
+      'iniciais': 'M',
+      'email': 'matheus@unipe.edu.br'
+    },
+    'luan@unipe.edu.br': {
+      'nome': 'Luan Kennedy',
+      'iniciais': 'L',
+      'email': 'luan@unipe.edu.br'
+    },
+    'marlon@unipe.edu.br': {
+      'nome': 'Marlon Mena',
+      'iniciais': 'M',
+      'email': 'marlon@unipe.edu.br'
+    },
+  };
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  // Função de validação "Mock" (apenas em memória)
   void _fazerLogin() {
-    final email = _emailController.text;
+    final email = _emailController.text.trim().toLowerCase();
     final senha = _passwordController.text;
 
-    if (email.endsWith('@unipe.edu.br') && senha.length >= 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login realizado com sucesso! (Demo)')),
+    // Verifica se o email existe no nosso "banco" e se a senha tem 6 chars
+    if (_usuariosGrupo.containsKey(email) && senha.length >= 6) {
+      final usuarioLogado = _usuariosGrupo[email]!;
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          // Passamos o usuário logado para o Feed
+          builder: (context) => FeedPage(usuarioLogado: usuarioLogado), 
+        ),
       );
-      // Aqui você usaria o Navigator para ir para a tela de Feed
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Credenciais inválidas para a demo.')),
+        const SnackBar(content: Text('E-mail não cadastrado ou senha inválida.')),
       );
     }
   }
@@ -117,7 +154,34 @@ class _LoginPageState extends State<LoginPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // Exibe um Dialog elegante simulando a ação
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: const Row(
+                                children: [
+                                  Icon(Icons.lock_reset, color: Color(0xFF0B2053)),
+                                  SizedBox(width: 8),
+                                  Text('Recuperar Senha', style: TextStyle(fontSize: 18)),
+                                ],
+                              ),
+                              content: const Text(
+                                'Na versão final, enviaremos um link de recuperação para o seu e-mail institucional.\n\n(Funcionalidade simulada na Demo)',
+                                style: TextStyle(color: Colors.black87),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context), // Fecha o aviso
+                                  child: const Text('Entendi', style: TextStyle(color: Color(0xFF0B2053), fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                         child: const Text('Esqueceu a senha?', style: TextStyle(color: Color(0xFF0B2053))),
                       ),
                     ),
@@ -172,7 +236,30 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           const Text('Não tem uma conta?', style: TextStyle(color: Colors.grey)),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              // Aguarda o resultado da tela de cadastro
+                              final novoUsuario = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const RegisterPage()),
+                              );
+
+                              // Se voltou com um usuário válido, adiciona no nosso "banco" em memória
+                              if (novoUsuario != null && novoUsuario is Map<String, String>) {
+                                setState(() {
+                                  _usuariosGrupo[novoUsuario['email']!] = novoUsuario;
+                                });
+                                
+                                // Opcional: Um aviso visual de que deu certo
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Agora você já pode fazer login!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
                             child: const Text('Criar conta', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0B2053))),
                           ),
                         ],
@@ -186,7 +273,7 @@ class _LoginPageState extends State<LoginPage> {
 
           // Ícone flutuante
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.25 - 40, // Centralizado na borda
+            top: MediaQuery.of(context).size.height * 0.25 - 40,
             left: MediaQuery.of(context).size.width * 0.5 - 40,
             child: Container(
               width: 80,
@@ -198,9 +285,12 @@ class _LoginPageState extends State<LoginPage> {
                   BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5)),
                 ],
               ),
-              child: const Center(
-                // Substitua por sua imagem/logo real depois
-                child: Icon(Icons.grid_view_rounded, size: 40, color: Color(0xFF0B2053)),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0), // Dá um recuo para a logo não encostar nas bordas do quadrado
+                child: Image.asset(
+                  'assets/images/estrela.jpg', // Caminho da sua logo completa
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),

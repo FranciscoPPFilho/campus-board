@@ -1,4 +1,4 @@
-import 'package:campus_board/features/auth/login_page.dart';
+import 'package:campus_board/features/splash/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
 // Importe a biblioteca foundation do Flutter para checar a plataforma
@@ -29,7 +29,7 @@ class MeuApp extends StatelessWidget {
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       title: 'App da Equipe',
-      home: LoginPage()
+      home: const SplashPage(),
     );
   }
 }
